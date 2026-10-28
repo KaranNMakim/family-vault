@@ -1,0 +1,155 @@
+# SYNTHETIC DATA — fictional people and institutions. Any resemblance is coincidental.
+id: family_b
+display_name: Agarwal joint family (synthetic)
+story: >
+  Three-generation joint family in Jaipur. Suresh (73) holds several FDs opened over decades with whichever
+  son was around, and some still name his late wife Kamla. Vikram's mutual fund names his brother while his
+  other holdings name his wife. Ajay's term plan expires this month. Riya (16) is a nominee but her mother is
+  recorded as guardian (negative control). Ajay's car loan has his wife as co-borrower (negative control).
+demo_passphrase: agarwal-demo-vault
+owner: p_suresh
+primary_earner: p_suresh
+
+people:
+  p_suresh: {name: Suresh Agarwal, relation: self,            dob: "1953-02-10"}
+  p_kamla:  {name: Kamla Agarwal,  relation: spouse,          dob: "1956-08-19", is_alive: false}
+  p_vikram: {name: Vikram Agarwal, relation: son,             dob: "1980-11-02", is_earner: true}
+  p_neha:   {name: Neha Agarwal,   relation: daughter_in_law, dob: "1983-04-25"}
+  p_ajay:   {name: Ajay Agarwal,   relation: son,             dob: "1984-06-30", is_earner: true}
+  p_pooja:  {name: Pooja Agarwal,  relation: daughter_in_law, dob: "1987-12-09"}
+  p_riya:   {name: Riya Agarwal,   relation: granddaughter,   dob: "2010-09-15"}
+
+institutions:
+  i_sahyadri:   {name: Sahyadri Co-operative Bank (fictional), kind: bank, city: Jaipur}
+  i_navikendra: {name: Navi Kendra Bank (fictional), kind: bank, city: Jaipur}
+  i_bharatlife: {name: Bharat Life Assurance (fictional), kind: insurer, city: Jaipur}
+  i_indusdp:    {name: Indus Valley Securities DP (fictional), kind: depository_participant, city: Mumbai}
+  i_ganga:      {name: Ganga Mutual Fund (fictional), kind: amc, city: Mumbai}
+  i_subreg:     {name: Sub-Registrar Office (fictional), kind: sub_registrar, city: Jaipur}
+  i_post:       {name: Head Post Office (fictional), kind: post_office, city: Jaipur}
+  i_finco:      {name: Marwar Auto Finance (fictional), kind: nbfc, city: Jaipur}
+
+advisors:
+  adv_gupta: {name: CA Gupta (fictional), kind: chartered_accountant, firm: Gupta and Associates}
+
+assets:
+  b_fd1:
+    props: {asset_type: fixed_deposit, label: FD at Sahyadri Bank (first), masked_id: "XXXX1102", maturity_date: "2027-08-01",
+            value_band: 10l_50l}
+    owners: [p_suresh]
+    nominees: [p_vikram]
+    held_at: i_sahyadri
+    advised_by: [adv_gupta]
+    knows: [p_vikram, p_ajay]
+    docs:
+      - {doc_type: fd_receipt, label: FD receipt, location: Steel trunk in puja room}
+  b_fd2:
+    props: {asset_type: fixed_deposit, label: FD at Navi Kendra Bank, masked_id: "XXXX2290", maturity_date: "2028-01-15",
+            value_band: 1l_10l}
+    owners: [p_suresh]
+    nominees: [p_ajay]
+    held_at: i_navikendra
+    advised_by: [adv_gupta]
+    knows: [p_vikram, p_ajay]
+    docs:
+      - {doc_type: fd_receipt, label: FD receipt, location: Steel trunk in puja room}
+  b_fd3:
+    props: {asset_type: fixed_deposit, label: Senior citizen FD at Sahyadri Bank, masked_id: "XXXX3315",
+            maturity_date: "2029-03-31", value_band: 10l_50l}
+    owners: [p_suresh]
+    nominees: [p_kamla]
+    held_at: i_sahyadri
+    advised_by: [adv_gupta]
+    knows: [p_vikram]
+    docs:
+      - {doc_type: fd_receipt, label: FD receipt, location: Steel trunk in puja room}
+  b_lic:
+    props: {asset_type: insurance, label: Endowment policy, masked_id: "XXXX8841", maturity_date: "2027-03-01",
+            value_band: 1l_10l}
+    owners: [p_suresh]
+    nominees: [p_kamla]
+    held_at: i_bharatlife
+    knows: [p_vikram, p_neha]
+    docs:
+      - {doc_type: policy_document, label: Policy bond, location: Steel trunk in puja room}
+  b_pension:
+    props: {asset_type: bank_account, label: Pension account, masked_id: "XXXX0457", value_band: 1l_10l}
+    owners: [p_suresh]
+    nominees: [p_vikram]
+    held_at: i_sahyadri
+    knows: [p_vikram, p_ajay, p_neha, p_pooja]
+    docs:
+      - {doc_type: passbook, label: Pension passbook, location: Suresh's bedside drawer}
+  b_house:
+    props: {asset_type: property, label: Ancestral house, value_band: above_1cr}
+    owners: [p_suresh, {id: p_vikram, role: joint}, {id: p_ajay, role: joint}]
+    held_at: i_subreg
+    knows: [p_neha, p_pooja]
+    docs:
+      - {doc_type: title_deed, label: Registered sale deed, location: Bank locker at Sahyadri Bank}
+  b_v_demat:
+    props: {asset_type: demat, label: Vikram's demat account, masked_id: "XXXX6612", value_band: 10l_50l}
+    owners: [p_vikram]
+    nominees: [p_neha]
+    held_at: i_indusdp
+    knows: [p_neha]
+    docs:
+      - {doc_type: demat_holding_statement, label: Holding statement, location: Email inbox, digital_copy: true}
+  b_v_savings:
+    props: {asset_type: bank_account, label: Vikram's savings account, masked_id: "XXXX7098", value_band: 1l_10l}
+    owners: [p_vikram]
+    nominees: [p_riya]
+    held_at: i_navikendra
+    knows: [p_neha]
+    docs:
+      - {doc_type: bank_statement, label: Bank statements, location: Netbanking downloads folder, digital_copy: true}
+  b_v_mf:
+    props: {asset_type: mutual_fund, label: Vikram's ELSS folio, masked_id: "XXXX5523", value_band: 1l_10l}
+    owners: [p_vikram]
+    nominees: [p_ajay]
+    held_at: i_ganga
+    knows: [p_neha]
+    docs:
+      - {doc_type: cas_statement, label: CAS statement, location: Email inbox, digital_copy: true}
+  b_a_term:
+    props: {asset_type: insurance, label: Ajay's term plan, masked_id: "XXXX9034", expiry_date: "2026-11-20",
+            value_band: above_1cr, notes: Yearly renewable cover; renewal reminder goes to old email}
+    owners: [p_ajay]
+    nominees: [p_pooja]
+    held_at: i_bharatlife
+    knows: [p_pooja]
+    docs:
+      - {doc_type: policy_document, label: Policy schedule, location: DigiLocker, digital_copy: true}
+  b_a_savings:
+    props: {asset_type: bank_account, label: Ajay's savings account, masked_id: "XXXX4418", value_band: 1l_10l}
+    owners: [p_ajay]
+    nominees: [p_pooja]
+    held_at: i_sahyadri
+    knows: [p_pooja]
+    docs:
+      - {doc_type: passbook, label: Passbook, location: Ajay's office bag}
+  b_n_ppf:
+    props: {asset_type: other, label: Neha's PPF account, value_band: 1l_10l}
+    owners: [p_neha]
+    held_at: i_post
+    knows: [p_vikram]
+    docs: []
+
+liabilities:
+  l_carloan:
+    props: {liability_type: loan, subtype: vehicle_loan, label: Ajay's car loan, masked_id: "XXXX3127",
+            end_date: "2029-02-10", outstanding_band: 1l_10l}
+    owners: [p_ajay, {id: p_pooja, role: co_borrower}]
+    held_at: i_finco
+    knows: []
+    docs:
+      - {doc_type: loan_agreement, label: Loan agreement, location: Ajay's office bag}
+  l_cc:
+    props: {liability_type: credit_card, subtype: credit_card, label: Ajay's credit card, masked_id: "XXXX0081"}
+    owners: [p_ajay]
+    held_at: i_sahyadri
+    knows: [p_pooja]
+    docs: []
+
+guardians:
+  - [p_neha, p_riya]

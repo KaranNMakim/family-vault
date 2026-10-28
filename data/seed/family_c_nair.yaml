@@ -1,0 +1,86 @@
+# SYNTHETIC DATA — fictional people and institutions. Any resemblance is coincidental.
+id: family_c
+display_name: Nair family (synthetic)
+story: >
+  Arjun (34) is the only earner and supports his retired parents in Kochi. He manages all the money on his
+  phone; his parents know about the term plan and the savings account but not the FD, demat or mutual fund.
+  His old college account still names a friend he has lost touch with. Several papers were never collected,
+  and an FD matures in three weeks.
+demo_passphrase: nair-demo-vault
+owner: p_arjun
+primary_earner: p_arjun
+
+people:
+  p_arjun:   {name: Arjun Nair,   relation: self,   dob: "1992-04-08", is_earner: true}
+  p_gopal:   {name: Gopal Nair,   relation: father, dob: "1958-01-20"}
+  p_lakshmi: {name: Lakshmi Nair, relation: mother, dob: "1961-06-05"}
+  p_vinod:   {name: Vinod Kumar,  relation: friend, household: false, reachable: false}
+
+institutions:
+  i_malabar:    {name: Malabar Coastal Bank (fictional), kind: bank, city: Kochi}
+  i_navikendra: {name: Navi Kendra Bank (fictional), kind: bank, city: Bengaluru}
+  i_bharatlife: {name: Bharat Life Assurance (fictional), kind: insurer, city: Kochi}
+  i_indusdp:    {name: Indus Valley Securities DP (fictional), kind: depository_participant, city: Mumbai}
+  i_ganga:      {name: Ganga Mutual Fund (fictional), kind: amc, city: Mumbai}
+  i_subreg:     {name: Sub-Registrar Office (fictional), kind: sub_registrar, city: Kochi}
+
+advisors: {}
+
+assets:
+  c_savings:
+    props: {asset_type: bank_account, label: Main savings account, masked_id: "XXXX2764", value_band: 1l_10l}
+    owners: [p_arjun]
+    nominees: [p_lakshmi]
+    held_at: i_malabar
+    knows: [p_lakshmi]
+    docs:
+      - {doc_type: passbook, label: Passbook, location: Kitchen cupboard tin box}
+  c_fd:
+    props: {asset_type: fixed_deposit, label: Fixed deposit at Malabar Coastal, masked_id: "XXXX8105",
+            maturity_date: "2026-11-21", value_band: 1l_10l}
+    owners: [p_arjun]
+    nominees: [p_lakshmi]
+    held_at: i_malabar
+    knows: []
+    docs:
+      - {doc_type: fd_receipt, label: E-receipt, location: Arjun's email, digital_copy: true}
+  c_demat:
+    props: {asset_type: demat, label: Demat and trading account, masked_id: "XXXX4490", value_band: 1l_10l}
+    owners: [p_arjun]
+    nominees: [p_lakshmi]
+    held_at: i_indusdp
+    knows: []
+    docs: []
+  c_mf:
+    props: {asset_type: mutual_fund, label: Index fund SIP, masked_id: "XXXX9351", value_band: 1l_10l}
+    owners: [p_arjun]
+    nominees: [p_lakshmi]
+    held_at: i_ganga
+    knows: []
+    docs: []
+  c_policy:
+    props: {asset_type: insurance, label: Arjun's term plan, masked_id: "XXXX1209", expiry_date: "2052-04-08",
+            value_band: 50l_1cr}
+    owners: [p_arjun]
+    nominees: [p_lakshmi]
+    held_at: i_bharatlife
+    knows: [p_gopal, p_lakshmi]
+    docs: []
+  c_old_acct:
+    props: {asset_type: bank_account, label: Old college account, masked_id: "XXXX0336", value_band: under_1l,
+            notes: Opened in Bengaluru during college; not used for years}
+    owners: [p_arjun]
+    nominees: [p_vinod]
+    held_at: i_navikendra
+    knows: []
+    docs: []
+  c_parents_house:
+    props: {asset_type: property, label: Family home in Kochi, value_band: 50l_1cr}
+    owners: [p_gopal]
+    held_at: i_subreg
+    knows: [p_lakshmi, p_arjun]
+    docs: []
+
+liabilities: {}
+
+guardians: []

@@ -1,0 +1,35 @@
+# Planted gaps in the synthetic families (ground truth for `make eval`), written from the family stories.
+# as_of: 2026-11-01, expiry window: 60 days. Key format: <rule>:<subject>.
+as_of: "2026-11-01"
+window_days: 60
+families:
+  family_a:
+    - {key: "G03:p_kabir", why: "8-year-old Kabir is nominee on the term plan; no guardian/appointee recorded"}
+    - {key: "G01:a_fd_ananya", why: "Ananya's FD has no nominee"}
+    - {key: "G05:a_mf", why: "No CAS statement recorded for the SIP folio"}
+    - {key: "G06:a_demat", why: "Only Rohan knows the demat account exists"}
+    - {key: "G08:l_homeloan", why: "Home loan: single borrower, no cover note (informational)"}
+    - {key: "G02:p_rohan", why: "Term plan names Kabir; other holdings name Ananya"}
+  family_b:
+    - {key: "G07:b_fd3/p_kamla", why: "Senior citizen FD still names late Kamla"}
+    - {key: "G07:b_lic/p_kamla", why: "Endowment policy still names late Kamla"}
+    - {key: "G02:p_suresh", why: "Suresh's FDs/policy name Vikram, Ajay and Kamla inconsistently"}
+    - {key: "G02:p_vikram", why: "Vikram's ELSS names Ajay; other holdings name Neha/Riya"}
+    - {key: "G04:b_a_term", why: "Ajay's term plan expires 2026-11-20"}
+  family_c:
+    - {key: "G04:c_fd", why: "FD matures 2026-11-21"}
+    - {key: "G06:c_fd", why: "Only Arjun knows about the FD"}
+    - {key: "G06:c_demat", why: "Only Arjun knows about the demat"}
+    - {key: "G06:c_mf", why: "Only Arjun knows about the mutual fund"}
+    - {key: "G06:c_old_acct", why: "Only Arjun knows about the old college account"}
+    - {key: "G05:c_demat", why: "No demat holding statement"}
+    - {key: "G05:c_mf", why: "No CAS statement"}
+    - {key: "G05:c_policy", why: "Term plan policy document never collected"}
+    - {key: "G05:c_old_acct", why: "No passbook/statement for old account"}
+    - {key: "G05:c_parents_house", why: "Title deed of parents' home not recorded"}
+    - {key: "G07:c_old_acct/p_vinod", why: "Nominee (friend Vinod) cannot be reached"}
+    - {key: "G02:p_arjun", why: "Old account names Vinod; everything else names Lakshmi"}
+# Negative controls (must NOT be flagged): Riya is a minor nominee WITH guardian Neha (no G03:p_riya);
+# Ajay's car loan has a co-borrower (no G08:l_carloan); credit cards are out of scope for G08 (no G08:l_cc);
+# Neha's PPF is type "other" (no G01/G05).
+negative_controls: ["G03:p_riya", "G08:l_carloan", "G08:l_cc", "G01:b_n_ppf", "G05:b_n_ppf"]

@@ -9,3 +9,10 @@
 - `app/core/crypto.py`: Argon2id KDF, XChaCha20-Poly1305 field encryption bound to record+field (AAD), key-check token, encrypted export blobs.
 - `app/core/masking.py`: last-4-only identifiers; rejects full account/card numbers, Aadhaar/PAN-like values, passwords/PIN/OTP, forbidden keys.
 - `app/kg/llm.py`: LLMClient (mock default / Anthropic live) with a structural-only context guard; `app/kg/provenance.py`.
+
+## Phase 2 — graph + gap rules
+- `GraphStore` protocol + `NetworkXSQLiteStore` (write-through SQLite, sensitive props encrypted, provenance on every node/edge, dump/load).
+- `app/core/estate.py` query helpers + rule-derived facts (Nominee typing, minor status) with `method: rule` provenance.
+- 8 deterministic gap rules G01–G08 (`app/core/gaps.py`) with severity, plain-language fix and one-click `fix_action`.
+- Readiness score 0–100 with capped category breakdown and per-gap "points if fixed".
+- Three synthetic families (`data/seed/`) + planted-gap manifest (`data/eval/gap_manifest.yaml`, 23 gaps + 5 negative controls); `python -m app.seed`.

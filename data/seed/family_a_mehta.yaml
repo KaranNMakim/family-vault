@@ -1,0 +1,95 @@
+# SYNTHETIC DATA — fictional people and institutions. Any resemblance is coincidental.
+id: family_a
+display_name: Mehta family (synthetic)
+story: >
+  Nuclear family in Pune with two young children. Rohan earns; Ananya manages the home and has her own FD.
+  Rohan made his 8-year-old son the nominee on his term plan but never named an appointee/guardian.
+demo_passphrase: mehta-demo-vault
+owner: p_rohan
+primary_earner: p_rohan
+
+people:
+  p_rohan:  {name: Rohan Mehta,  relation: self,     dob: "1988-03-14", is_earner: true}
+  p_ananya: {name: Ananya Mehta, relation: spouse,   dob: "1990-07-02"}
+  p_kabir:  {name: Kabir Mehta,  relation: son,      dob: "2018-05-20"}
+  p_myra:   {name: Myra Mehta,   relation: daughter, dob: "2022-01-11"}
+
+institutions:
+  i_bharatlife: {name: Bharat Life Assurance (fictional), kind: insurer, city: Pune}
+  i_sahyadri:   {name: Sahyadri Co-operative Bank (fictional), kind: bank, city: Pune}
+  i_indusdp:    {name: Indus Valley Securities DP (fictional), kind: depository_participant, city: Mumbai}
+  i_ganga:      {name: Ganga Mutual Fund (fictional), kind: amc, city: Mumbai}
+  i_rto:        {name: Regional Transport Office (fictional), kind: rto, city: Pune}
+
+advisors:
+  adv_desai: {name: Mr. Desai (fictional), kind: insurance_agent, firm: Desai Insurance Services}
+
+assets:
+  a_term:
+    props: {asset_type: insurance, label: Term life cover, masked_id: "XXXX4471", expiry_date: "2048-03-14",
+            value_band: above_1cr, notes: Premium auto-debited from salary account}
+    owners: [p_rohan]
+    nominees: [p_kabir]
+    held_at: i_bharatlife
+    advised_by: [adv_desai]
+    knows: [p_ananya]
+    docs:
+      - {doc_type: policy_document, label: Term policy bond, location: Blue file in bedroom cupboard, digital_copy: true}
+  a_savings:
+    props: {asset_type: bank_account, label: Salary savings account, masked_id: "XXXX0912", value_band: 1l_10l}
+    owners: [p_rohan]
+    nominees: [p_ananya]
+    held_at: i_sahyadri
+    knows: [p_ananya]
+    docs:
+      - {doc_type: passbook, label: Savings passbook, location: Study table drawer}
+  a_fd_ananya:
+    props: {asset_type: fixed_deposit, label: Ananya's fixed deposit, masked_id: "XXXX3380", maturity_date: "2028-06-30",
+            value_band: 1l_10l}
+    owners: [p_ananya]
+    nominees: []
+    held_at: i_sahyadri
+    knows: [p_rohan]
+    docs:
+      - {doc_type: fd_receipt, label: FD advice slip, location: Blue file in bedroom cupboard}
+  a_mf:
+    props: {asset_type: mutual_fund, label: Monthly SIP folio, masked_id: "XXXX7720", value_band: 1l_10l}
+    owners: [p_rohan]
+    nominees: [p_ananya]
+    held_at: i_ganga
+    knows: [p_ananya]
+    docs: []
+  a_demat:
+    props: {asset_type: demat, label: Stock trading account, masked_id: "XXXX5106", value_band: 1l_10l,
+            notes: Opened during lockdown; app on Rohan's phone only}
+    owners: [p_rohan]
+    nominees: [p_ananya]
+    held_at: i_indusdp
+    knows: []
+    docs:
+      - {doc_type: demat_holding_statement, label: Holding statement, location: Email inbox, digital_copy: true}
+  a_car:
+    props: {asset_type: vehicle, label: Family car, masked_id: "XXXX2201"}
+    owners: [p_rohan]
+    held_at: i_rto
+    knows: [p_ananya]
+    docs:
+      - {doc_type: rc_book, label: Vehicle RC, location: Glovebox and DigiLocker, digital_copy: true}
+  a_flat:
+    props: {asset_type: property, label: Flat in Baner, value_band: 50l_1cr}
+    owners: [p_rohan, {id: p_ananya, role: joint}]
+    knows: []
+    docs:
+      - {doc_type: title_deed, label: Sale deed, location: Bank locker at Sahyadri Bank}
+
+liabilities:
+  l_homeloan:
+    props: {liability_type: loan, subtype: home_loan, label: Home loan for the flat, masked_id: "XXXX6650",
+            end_date: "2041-04-05", outstanding_band: 10l_50l}
+    owners: [p_rohan]
+    held_at: i_sahyadri
+    knows: [p_ananya]
+    docs:
+      - {doc_type: loan_agreement, label: Loan agreement, location: Blue file in bedroom cupboard}
+
+guardians: []
