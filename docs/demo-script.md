@@ -8,7 +8,8 @@ Setup: `make demo`, then open http://localhost:3000. All families are fictional.
 **Story:** a new family uses the guided conversation, and the vault immediately finds a risk.
 
 1. On the start page, under **Start a new family**, enter `Iyer family` and a passphrase such as `iyer-demo-pass`.
-   Click **Start onboarding**.
+   Click **Create vault and set up 2-step verification**. Enter the code from the demo
+   authenticator (or scan the setup key into your own authenticator app) to finish.
 2. The vault asks for your name: enter `Meera Iyer`, date of birth `1985-02-02`. Continue.
 3. Add a family member: `Tara Iyer`, relation *daughter*, date of birth `2019-01-01`. Click **That's everyone — next**.
 4. "Do you have an insurance policy?" Answer **Yes**.
@@ -26,7 +27,9 @@ Setup: `make demo`, then open http://localhost:3000. All families are fictional.
 
 **Story:** the Mehta family (young children, home loan).
 
-1. On the start page, open **Mehta family (synthetic)** (passphrase pre-filled).
+1. On the start page, point out **How this vault is protected**. On **Mehta family (synthetic)** click **Continue**
+   (passphrase pre-filled). Step 2 asks for the 6-digit code: type the one shown by the *demo authenticator* and
+   click **Verify and unlock**. (Try a wrong code first: it is refused and the attempts left are shown.)
 2. **Overview:** readiness **61 — Some important gaps**. The top fix is the minor nominee on Rohan's term plan (+15).
 3. **Estate map:** coloured rings mark gaps. Tap *Term life cover*: details, gaps, connections and provenance
    (`seed:family_a · human`).

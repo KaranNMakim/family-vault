@@ -14,9 +14,9 @@ from pydantic import BaseModel, Field
 
 from app import __version__
 from app.api.pdf import checklist_pdf
-from app.api.sessions import Registry, Session
+from app.api.sessions import CHALLENGE_TTL, IDLE_TIMEOUT, LOCKOUT, ChallengeError, Registry, Session, TooManyAttempts
 from app.config import get_settings
-from app.core import audit, emergency, onboarding
+from app.core import audit, emergency, onboarding, totp
 from app.core.access import (
     AccessDenied,
     Principal,
@@ -94,6 +94,11 @@ class ExportIn(BaseModel):
     passphrase: str = Field(min_length=8)
 
 
+class VerifyIn(BaseModel):
+    challenge_id: str
+    code: str = Field(min_length=6, max_length=8)
+
+
 class ImportIn(BaseModel):
     blob_b64: str
     export_passphrase: str
@@ -159,6 +164,13 @@ def create_app(registry: Registry | None = None) -> FastAPI:
     async def _nf(_: Request, e: NotFound):
         return JSONResponse(status_code=404, content={"error": "not_found", "detail": str(e)})
 
+    @api.exception_handler(TooManyAttempts)
+    async def _too_many(_: Request, e: TooManyAttempts):
+        secs = int(e.retry_after.total_seconds())
+        return JSONResponse(status_code=429, headers={"Retry-After": str(secs)},
+                            content={"error": "locked", "retry_after_seconds": secs,
+                                     "detail": f"Too many attempts. Try again in {secs // 60 + 1} min."})
+
     @api.exception_handler(emergency.TooEarly)
     async def _early(_: Request, e: emergency.TooEarly):
         return JSONResponse(status_code=409, content={"error": "too_early", "detail": str(e),
@@ -180,7 +192,22 @@ def create_app(registry: Registry | None = None) -> FastAPI:
     def session_out(s: Session) -> dict:
         store = reg.store(s.family_id)
         return {"token": s.token, "family": store.meta, "principal": s.principal.model_dump(),
-                "can_write": s.principal.can_write, "notice": DEMO_NOTICE}
+                "can_write": s.principal.can_write, "notice": DEMO_NOTICE,
+                "security": {"two_factor": s.two_factor, "encryption": "Argon2id + XChaCha20-Poly1305",
+                             "idle_timeout_minutes": int(IDLE_TIMEOUT.total_seconds() // 60)}}
+
+    def challenge_out(c, enroll_secret: str | None = None) -> dict:
+        out = {"challenge_id": c.id, "method": "totp", "expires_in_seconds": int(CHALLENGE_TTL.total_seconds()),
+               "family_id": c.family_id}
+        if enroll_secret:
+            name = reg.store(c.family_id).meta.get("display_name", c.family_id)
+            out["enroll"] = {"secret": enroll_secret, "otpauth_uri": totp.provisioning_uri(enroll_secret, name)}
+        return out
+
+    def start_enrollment(fid: str, store) -> dict:
+        secret = totp.new_secret()
+        store.set_totp_secret(secret)
+        return challenge_out(reg.new_challenge(fid, enroll=True), secret)
 
     # ------------------------------------------------------------------ public
     @api.get("/health")
@@ -204,24 +231,42 @@ def create_app(registry: Registry | None = None) -> FastAPI:
     # ------------------------------------------------------------------ sessions
     @api.post("/session/unlock")
     def unlock(body: UnlockIn) -> dict:
+        """Step 1 of 2: the passphrase. Returns a one-time-code challenge, not a session."""
         try:
             store = reg.unlock(body.family_id, body.passphrase)
         except (KeyError, FileNotFoundError) as e:
             raise HTTPException(404, "no such family vault") from e
         except WrongPassphrase as e:
-            raise HTTPException(401, "wrong passphrase") from e
+            left = reg.record_failure(body.family_id)
+            audit.append_unauthenticated(reg.path(body.family_id), "vault.unlock_failed", {"reason": "passphrase"})
+            if left == 0:
+                raise TooManyAttempts(LOCKOUT) from e
+            raise HTTPException(401, f"wrong passphrase; {left} attempt(s) left before a 5-minute lock") from e
+        if not store.totp_secret():  # older vault without a second factor: enrol one now
+            return start_enrollment(body.family_id, store)
+        return challenge_out(reg.new_challenge(body.family_id))
+
+    @api.post("/session/verify")
+    def verify(body: VerifyIn) -> dict:
+        """Step 2 of 2: the code from the family's authenticator app. Issues the session."""
+        try:
+            ch = reg.verify_challenge(body.challenge_id, body.code)
+        except ChallengeError as e:
+            raise HTTPException(401, str(e)) from e
+        store = reg.store(ch.family_id)
         owner = store.meta.get("owner")
-        s = reg.new_session(body.family_id, Principal(role="owner", person_id=owner))
-        audit.append(store, owner or "owner", "owner", "vault.unlocked")
+        s = reg.new_session(ch.family_id, Principal(role="owner", person_id=owner))
+        audit.append(store, owner or "owner", "owner", "vault.unlocked",
+                     details={"second_factor": "totp", "enrolled": ch.enroll})
         return session_out(s)
 
     @api.post("/vaults")
     def create_vault(body: CreateVaultIn) -> dict:
+        """Create a vault and enrol its authenticator; confirm with /session/verify."""
         check_free_text(body.display_name, "display_name")
         fid, store = reg.create(body.display_name, body.passphrase)
-        s = reg.new_session(fid, Principal(role="owner"))
         audit.append(store, "owner", "owner", "vault.created", fid)
-        return session_out(s)
+        return start_enrollment(fid, store)
 
     @api.get("/session")
     def get_session(c: Ctx = Depends(ctx)) -> dict:
@@ -503,7 +548,7 @@ def create_app(registry: Registry | None = None) -> FastAPI:
         return Response(blob, media_type="application/octet-stream",
                         headers={"Content-Disposition": f'attachment; filename="{fid}.fvault"'})
 
-    @api.post("/import", status_code=201)
+    @api.post("/import")
     def import_vault(body: ImportIn) -> dict:
         try:
             data = decrypt_export(base64.b64decode(body.blob_b64), body.export_passphrase)
@@ -515,8 +560,7 @@ def create_app(registry: Registry | None = None) -> FastAPI:
         store.load_dump(data)
         store.set_meta(data.get("meta", {}) | {"id": fid, "display_name": body.display_name})
         audit.append(store, "owner", "owner", "vault.imported", fid)
-        s = reg.new_session(fid, Principal(role="owner", person_id=store.meta.get("owner")))
-        return session_out(s)
+        return start_enrollment(fid, store)
 
     # ------------------------------------------------------------------ onboarding
     @api.get("/onboarding")

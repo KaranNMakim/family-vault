@@ -2,12 +2,16 @@
 
 import base64
 import shutil
+import sqlite3
+from datetime import timedelta
 
 import pytest
 from fastapi.testclient import TestClient
 
+from app.api import sessions as sessions_mod
 from app.api.main import create_app
 from app.api.sessions import Registry
+from app.core import totp
 
 
 @pytest.fixture
@@ -21,10 +25,18 @@ def client(tmp_path, families, seeded_dir):
     reg.close_all()
 
 
-def unlock(client, fid="family_a"):
-    r = client.post("/session/unlock", json={"family_id": fid, "passphrase": client.families[fid]["demo_passphrase"]})
+def verify(client, challenge: dict, secret: str) -> dict:
+    r = client.post("/session/verify", json={"challenge_id": challenge["challenge_id"], "code": totp.code_at(secret)})
     assert r.status_code == 200, r.text
     return {"Authorization": f"Bearer {r.json()['token']}"}
+
+
+def unlock(client, fid="family_a"):
+    fam = client.families[fid]
+    r = client.post("/session/unlock", json={"family_id": fid, "passphrase": fam["demo_passphrase"]})
+    assert r.status_code == 200, r.text
+    assert "token" not in r.json() and r.json()["method"] == "totp"  # passphrase alone is not enough
+    return verify(client, r.json(), fam["totp_secret"])
 
 
 def act_as(client, h, **body):
@@ -44,7 +56,8 @@ def test_public_endpoints(client):
 
 
 def test_unlock_errors(client):
-    assert client.post("/session/unlock", json={"family_id": "family_a", "passphrase": "nope-nope"}).status_code == 401
+    bad = client.post("/session/unlock", json={"family_id": "family_a", "passphrase": "nope-nope"})
+    assert bad.status_code == 401 and "attempt(s) left" in bad.json()["detail"]
     assert client.post("/session/unlock", json={"family_id": "nope", "passphrase": "x" * 9}).status_code == 404
     assert client.post("/session/unlock", json={"family_id": "../etc", "passphrase": "x" * 9}).status_code == 404
     assert client.get("/assets").status_code == 401
@@ -219,16 +232,18 @@ def test_export_import_roundtrip(client):
     assert junk.status_code == 400
     ok = client.post("/import", json={"blob_b64": b64, "export_passphrase": "export-pass-123",
                                       "display_name": "Mehta copy", "new_vault_passphrase": "new-vault-pass"})
-    assert ok.status_code == 201
-    h2 = {"Authorization": f"Bearer {ok.json()['token']}"}
+    assert ok.status_code == 200 and ok.json()["enroll"]["secret"]  # imported vault enrols a new authenticator
+    h2 = verify(client, ok.json(), ok.json()["enroll"]["secret"])
     assert len(client.get("/assets", headers=h2).json()) == 7
-    assert ok.json()["family"]["display_name"] == "Mehta copy"
+    assert client.get("/session", headers=h2).json()["family"]["display_name"] == "Mehta copy"
 
 
 def test_onboarding_flow_creates_graph_and_gaps(client):
     r = client.post("/vaults", json={"display_name": "Test onboarding family", "passphrase": "onboard-pass-1"})
     assert r.status_code == 200
-    h = {"Authorization": f"Bearer {r.json()['token']}"}
+    enroll = r.json()["enroll"]
+    assert enroll["otpauth_uri"].startswith("otpauth://totp/") and enroll["secret"] in enroll["otpauth_uri"]
+    h = verify(client, r.json(), enroll["secret"])
     q = client.get("/onboarding", headers=h).json()
     assert q["question"]["id"] == "household.owner" and not q["question"]["skippable"]
     assert client.post("/onboarding/answer", json={"skip": True}, headers=h).status_code == 422
@@ -260,3 +275,77 @@ def test_onboarding_flow_creates_graph_and_gaps(client):
     bad_owner = client.post("/onboarding/reset", headers=h)
     assert bad_owner.json()["question"]["id"] == "household.member"
     assert client.post("/vaults", json={"display_name": "PAN ABCDE1234F", "passphrase": "x" * 8}).status_code == 422
+
+
+# ---------------------------------------------------------------------------------------------- 2-step unlock
+def _challenge(client, fid="family_a"):
+    fam = client.families[fid]
+    return client.post("/session/unlock", json={"family_id": fid, "passphrase": fam["demo_passphrase"]}).json()
+
+
+def test_wrong_code_and_replay_are_rejected(client):
+    secret = client.families["family_a"]["totp_secret"]
+    ch = _challenge(client)
+    wrong = "000000" if totp.code_at(secret) != "000000" else "111111"
+    bad = client.post("/session/verify", json={"challenge_id": ch["challenge_id"], "code": wrong})
+    assert bad.status_code == 401 and "attempt(s) left" in bad.json()["detail"]
+    verify(client, ch, secret)
+    # The same code cannot be used again (replay), even after a fresh passphrase step.
+    ch2 = _challenge(client)
+    again = client.post("/session/verify", json={"challenge_id": ch2["challenge_id"], "code": totp.code_at(secret)})
+    assert again.status_code == 401
+    assert client.post("/session/verify", json={"challenge_id": "nope", "code": "123456"}).status_code == 401
+
+
+def test_code_attempts_and_passphrase_failures_lock_the_vault(client):
+    secret = client.families["family_b"]["totp_secret"]
+    wrong = "000000" if totp.code_at(secret) != "000000" else "111111"
+    ch = _challenge(client, "family_b")
+    for _ in range(sessions_mod.MAX_CODE_ATTEMPTS):
+        client.post("/session/verify", json={"challenge_id": ch["challenge_id"], "code": wrong})
+    locked = client.post("/session/verify", json={"challenge_id": ch["challenge_id"], "code": wrong})
+    assert locked.status_code == 429
+    right_pass = {"family_id": "family_b", "passphrase": client.families["family_b"]["demo_passphrase"]}
+    assert client.post("/session/unlock", json=right_pass).status_code == 429
+    for _ in range(sessions_mod.MAX_PASSPHRASE_FAILURES):
+        r = client.post("/session/unlock", json={"family_id": "family_c", "passphrase": "wrong-passphrase"})
+    assert r.status_code == 429 and int(r.headers["Retry-After"]) > 0
+    ok_pass = {"family_id": "family_c", "passphrase": client.families["family_c"]["demo_passphrase"]}
+    assert client.post("/session/unlock", json=ok_pass).status_code == 429  # locked even with the right one
+
+
+def test_failed_unlocks_are_audited(client):
+    client.post("/session/unlock", json={"family_id": "family_a", "passphrase": "wrong-passphrase"})
+    h = unlock(client)
+    entries = client.get("/audit", headers=h).json()["entries"]
+    assert "vault.unlock_failed" in [e["action"] for e in entries]
+    unlocked = next(e for e in entries if e["action"] == "vault.unlocked")
+    assert unlocked["details"]["second_factor"] == "totp"
+
+
+def test_idle_session_expires(client):
+    h = unlock(client)
+    s = client.get("/session", headers=h).json()
+    assert s["security"]["two_factor"] is True and s["security"]["idle_timeout_minutes"] == 15
+    reg = client.app.state.registry
+    reg.sessions[h["Authorization"][7:]].last_seen -= sessions_mod.IDLE_TIMEOUT + timedelta(seconds=1)
+    assert client.get("/session", headers=h).status_code == 401
+
+
+def test_expired_challenge(client):
+    ch = _challenge(client)
+    challenge = client.app.state.registry.challenges[ch["challenge_id"]]
+    challenge.created_at -= sessions_mod.CHALLENGE_TTL + timedelta(seconds=1)
+    r = client.post("/session/verify", json={"challenge_id": ch["challenge_id"], "code": "123456"})
+    assert r.status_code == 401 and "expired" in r.json()["detail"]
+
+
+def test_vault_without_second_factor_enrols_one(client):
+    reg = client.app.state.registry
+    db = sqlite3.connect(reg.path("family_a"))
+    db.execute("DELETE FROM meta WHERE key='totp'")
+    db.commit()
+    db.close()
+    ch = _challenge(client)
+    assert ch["enroll"]["secret"]
+    verify(client, ch, ch["enroll"]["secret"])

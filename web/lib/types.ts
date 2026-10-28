@@ -24,6 +24,7 @@ export interface Session {
   principal: Principal;
   can_write: boolean;
   notice: string;
+  security?: { two_factor: boolean; idle_timeout_minutes: number; encryption: string };
 }
 
 export interface Persona {

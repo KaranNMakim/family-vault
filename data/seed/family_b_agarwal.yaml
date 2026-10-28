@@ -6,6 +6,8 @@ story: >
   son was around, and some still name his late wife Kamla. Vikram's mutual fund names his brother while his
   other holdings name his wife. Ajay's term plan expires this month. Riya (16) is a nominee but her mother is
   recorded as guardian (negative control). Ajay's car loan has his wife as co-borrower (negative control).
+# Demo second factor (TOTP, RFC 6238). Synthetic and published on purpose; add it to any authenticator app.
+totp_secret: G4P2PJEUAT5GSSD37PE7ES23WHIJ3R7N
 demo_passphrase: agarwal-demo-vault
 owner: p_suresh
 primary_earner: p_suresh

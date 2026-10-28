@@ -24,7 +24,7 @@ from pathlib import Path
 import yaml
 
 from app.config import ROOT
-from app.core import onboarding
+from app.core import onboarding, totp
 from app.core.checklist import SCENARIOS, generate
 from app.core.crypto import TamperDetected, WrongPassphrase, decrypt_export, encrypt_export
 from app.core.estate import Estate
@@ -107,6 +107,8 @@ def eval_checklists(stores: dict, ref: dict) -> dict:
 # ---------------------------------------------------------------------------------------------- 3. crypto
 def _sensitive_plaintexts(fam: dict) -> list[str]:
     vals = [p["dob"] for p in fam["people"].values() if p.get("dob")]
+    if fam.get("totp_secret"):
+        vals.append(fam["totp_secret"])  # second-factor secret must be encrypted too
     for section in ("assets", "liabilities"):
         for spec in (fam.get(section) or {}).values():
             for k in ("notes", "masked_id"):
@@ -220,8 +222,10 @@ def eval_masking() -> dict:
         build_vault(fam, tmp)
         reg = Registry(tmp)
         client = TestClient(create_app(reg))
-        tok = client.post("/session/unlock", json={"family_id": "family_a",
-                                                   "passphrase": fam["demo_passphrase"]}).json()["token"]
+        ch = client.post("/session/unlock", json={"family_id": "family_a",
+                                                  "passphrase": fam["demo_passphrase"]}).json()
+        tok = client.post("/session/verify", json={"challenge_id": ch["challenge_id"],
+                                                   "code": totp.code_at(fam["totp_secret"])}).json()["token"]
         h = {"Authorization": f"Bearer {tok}"}
 
         def post(field: str, value: str):

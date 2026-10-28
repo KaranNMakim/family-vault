@@ -63,6 +63,8 @@ def build_vault(fam: dict, vault_dir: Path, force: bool = True) -> Path:
         path.unlink()
     store = NetworkXSQLiteStore.create(path, fam["demo_passphrase"], public_meta(fam))
     try:
+        if fam.get("totp_secret"):
+            store.set_totp_secret(fam["totp_secret"])
         populate(store, fam)
     finally:
         store.close()

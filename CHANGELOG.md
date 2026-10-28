@@ -42,3 +42,9 @@
 - `make eval` (`app/eval.py`) → `docs/eval-report.md`: gap P/R 100%/100% (23 planted, 5 negative controls clean), 9/9 checklists exact vs references, crypto 7/7, masking 22/22 full-number inputs rejected (8/8 valid accepted), 0 family values in LLM payloads.
 - `docs/security.md` (threat model, key loss), `docs/demo-script.md` (3 flows), full README (mermaid architecture, mocked vs real, productization).
 - Fixes found during browser testing: SQLite connection now thread-safe across API workers; onboarding chat no longer crashes in browsers where `scrollIntoView` returns a Promise; expired sessions return the user to the start page; "an insurance policy" wording; owner session gets its person id once the owner is created in onboarding.
+
+## Security hardening — two-step unlock
+- Unlock is now passphrase + TOTP authenticator code (RFC 6238, Google/Microsoft Authenticator compatible); the TOTP secret is stored encrypted in the vault.
+- 5 wrong passphrases or codes lock the vault for 5 minutes; codes can't be replayed; challenges expire after 5 minutes; sessions expire after 15 min idle / 8 h; failed unlocks are audited.
+- New and imported vaults enrol a fresh authenticator key (setup key + `otpauth://` URI).
+- Web: two-step unlock with a step indicator, an on-screen demo authenticator for the sample families, a "How this vault is protected" panel, a header security indicator and client-side idle auto-lock. The role switcher is now labelled "Preview as (demo)".

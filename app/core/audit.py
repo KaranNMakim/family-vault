@@ -32,6 +32,19 @@ def append(store, actor: str, role: str, action: str, target: str = "", details:
     return entry | {"hash": h}
 
 
+def append_unauthenticated(path, action: str, details: dict | None = None) -> None:
+    """Record an event (e.g. a failed unlock) without the vault key; audit rows are not encrypted."""
+    from types import SimpleNamespace
+
+    from app.kg.store import LockedConnection
+
+    conn = LockedConnection(path)
+    try:
+        append(SimpleNamespace(db=conn), "unknown", "anonymous", action, details=details)
+    finally:
+        conn.close()
+
+
 def entries(store, limit: int = 200) -> list[dict]:
     rows = store.db.execute("SELECT body, hash FROM audit ORDER BY seq DESC LIMIT ?", (limit,)).fetchall()
     return [json.loads(b) | {"hash": h} for b, h in rows]

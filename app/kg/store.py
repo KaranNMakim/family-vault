@@ -171,6 +171,16 @@ class NetworkXSQLiteStore:
         row = self.db.execute("SELECT value FROM meta WHERE key='family'").fetchone()
         return json.loads(row[0]) if row else {}
 
+    def set_totp_secret(self, secret: str) -> None:
+        """Second-factor secret, stored encrypted with the vault key."""
+        token = self.cipher.encrypt_bytes(secret.encode(), b"meta:totp")
+        self.db.execute("INSERT OR REPLACE INTO meta VALUES ('totp', ?)", (token,))
+        self.db.commit()
+
+    def totp_secret(self) -> str | None:
+        row = self.db.execute("SELECT value FROM meta WHERE key='totp'").fetchone()
+        return self.cipher.decrypt_bytes(row[0], b"meta:totp").decode() if row else None
+
     def set_meta(self, meta: dict) -> None:
         self.db.execute("INSERT OR REPLACE INTO meta VALUES ('family', ?)", (json.dumps(meta),))
         self.db.commit()

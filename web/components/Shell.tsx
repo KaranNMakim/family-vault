@@ -8,6 +8,7 @@ import { api } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import type { Persona, Role } from "@/lib/types";
 
+import { ShieldIcon } from "./Security";
 import { ErrorBox, Loading } from "./ui";
 
 const NAV: { href: string; label: string; roles: Role[] }[] = [
@@ -51,7 +52,7 @@ function RoleSwitcher() {
   );
   return (
     <label className="flex items-center gap-2 text-sm">
-      <span className="font-semibold text-muted">Viewing as</span>
+      <span className="font-semibold text-muted">Preview as (demo)</span>
       <select
         aria-label="Switch role (demo)"
         className="field min-h-10 w-auto py-1"
@@ -89,6 +90,25 @@ export function Shell({ children }: { children: React.ReactNode }) {
     if (ready && !session) router.replace("/");
   }, [ready, session, router]);
 
+  // Auto-lock after inactivity (mirrors the server's idle timeout).
+  const idleMinutes = session?.security?.idle_timeout_minutes ?? 15;
+  useEffect(() => {
+    if (!session) return;
+    let last = Date.now();
+    const bump = () => {
+      last = Date.now();
+    };
+    const events = ["mousemove", "keydown", "click", "touchstart", "scroll"] as const;
+    events.forEach((e) => window.addEventListener(e, bump, { passive: true }));
+    const id = setInterval(() => {
+      if (Date.now() - last > idleMinutes * 60_000) void lock().then(() => router.push("/"));
+    }, 15_000);
+    return () => {
+      events.forEach((e) => window.removeEventListener(e, bump));
+      clearInterval(id);
+    };
+  }, [session, idleMinutes, lock, router]);
+
   if (!ready) return <Loading />;
   if (!session) return <ErrorBox message="The vault is locked. Taking you to the start page…" />;
   const role = session.principal.role;
@@ -104,6 +124,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
             </Link>
             <div className="text-sm text-muted">
               {session.family.display_name} · <span className="font-semibold">{ROLE_LABEL[role]}</span>
+            </div>
+            <div className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-brand" title={session.security?.encryption}>
+              <ShieldIcon className="size-4" />
+              {session.security?.two_factor ? "Unlocked with 2-step verification" : "Unlocked"} · auto-locks after {idleMinutes} min idle
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">

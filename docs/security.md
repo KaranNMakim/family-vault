@@ -37,6 +37,21 @@ There is **no recovery** if the passphrase is lost: the vault cannot be decrypte
 This is deliberate. Mitigations for the POV: keep an encrypted export (with a different passphrase) somewhere safe.
 A product would add recovery kits (e.g. Shamir shares held by family members) and per-member key wrapping.
 
+## Unlocking: two-step verification
+
+1. **Passphrase** — derives the vault key with Argon2id and opens the vault. Wrong passphrases are counted per vault:
+   5 failures in 15 minutes lock the vault for 5 minutes (HTTP 429 with `Retry-After`). Failures are written to the
+   audit log even though the vault is still locked.
+2. **Authenticator code** — a 6-digit TOTP (RFC 6238: HMAC-SHA1, 30-second steps, ±1 step of clock drift), compatible
+   with Google Authenticator, Microsoft Authenticator and Authy. The shared secret is stored **inside the vault,
+   encrypted with the vault key**, so it can only be checked after step 1. Each challenge expires after 5 minutes and
+   allows 5 tries; a used code cannot be replayed.
+
+Only after both steps is a session token issued. Sessions expire after 15 minutes idle (the web app also auto-locks)
+or 8 hours in total. New and imported vaults enrol a fresh authenticator key (shown once with an `otpauth://` URI).
+For the sample families the setup keys are published on purpose, and the start page shows a *demo authenticator*
+that stands in for the phone app.
+
 ## Access control
 
 Every API response is filtered server-side by the caller's role:
@@ -93,7 +108,8 @@ Structured JSON logs; values under sensitive keys are replaced with `[REDACTED]`
 
 - A compromised server while a vault is unlocked (the key is in process memory), or a malicious operator.
 - Weak passphrases beyond what Argon2id cost buys; no passphrase-strength enforcement beyond 8 characters.
-- Real authentication: the role switcher is a demo; anyone with the owner session can act as any role.
+- Per-person identity: the owner unlocks with passphrase + TOTP, but other family roles are previewed through a demo
+  role switcher, not separate logins with their own keys. No phishing-resistant factor (passkeys/WebAuthn) yet.
 - Network attackers: the demo runs over plain HTTP on localhost; CORS allows any localhost origin.
 - Metadata: names, relationships, institution names and asset types are plaintext in the vault file.
 - Side channels, browser compromise, shoulder-surfing, malicious browser extensions.

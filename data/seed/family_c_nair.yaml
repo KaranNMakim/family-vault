@@ -6,6 +6,8 @@ story: >
   phone; his parents know about the term plan and the savings account but not the FD, demat or mutual fund.
   His old college account still names a friend he has lost touch with. Several papers were never collected,
   and an FD matures in three weeks.
+# Demo second factor (TOTP, RFC 6238). Synthetic and published on purpose; add it to any authenticator app.
+totp_secret: Z5B4KSEKUBT72457CLE6YFLUHCTXMMGR
 demo_passphrase: nair-demo-vault
 owner: p_arjun
 primary_earner: p_arjun

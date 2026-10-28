@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Shell } from "@/components/Shell";
+import { type Challenge, rememberSecret, VerifyStep } from "@/components/Unlock";
 import { ErrorBox, GuidanceNote, Loading, PageTitle } from "@/components/ui";
 import { api, downloadBlob } from "@/lib/api";
 import { useSession } from "@/lib/session";
@@ -33,6 +34,7 @@ function VaultPage() {
   const [newPass, setNewPass] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  const [imported, setImported] = useState<Challenge | null>(null);
 
   return (
     <>
@@ -83,6 +85,21 @@ function VaultPage() {
             <span className="label">Passphrase for the new vault</span>
             <input className="field" type="password" value={newPass} onChange={(e) => setNewPass(e.target.value)} autoComplete="new-password" />
           </label>
+          {imported?.enroll && (
+            <div className="rounded-xl border border-line p-4">
+              <p className="mb-2 font-semibold">Imported. The restored vault gets its own 2-step verification — setup key:</p>
+              <p className="mb-3 rounded-lg bg-paper px-3 py-2 text-center font-mono tracking-wider">{imported.enroll.secret.match(/.{1,4}/g)?.join(" ")}</p>
+              <VerifyStep
+                challenge={imported}
+                label="Restored vault"
+                onDone={(s: Session) => {
+                  setSession(s);
+                  router.push("/dashboard");
+                }}
+                onBack={() => setImported(null)}
+              />
+            </div>
+          )}
           <button
             className="btn-secondary"
             disabled={!file || !importPass || newPass.length < 8}
@@ -90,11 +107,11 @@ function VaultPage() {
               setError(null);
               try {
                 const blob_b64 = toBase64(await file!.arrayBuffer());
-                const s = await api<Session>("/import", {
+                const c = await api<Challenge>("/import", {
                   body: { blob_b64, export_passphrase: importPass, new_vault_passphrase: newPass, display_name: `${session?.family.display_name} (restored)` },
                 });
-                setSession(s);
-                router.push("/dashboard");
+                if (c.enroll) rememberSecret(c.family_id, c.enroll.secret);
+                setImported(c);
               } catch (e) {
                 setError(e instanceof Error ? e.message : String(e));
               }

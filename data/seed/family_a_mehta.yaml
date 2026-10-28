@@ -4,6 +4,8 @@ display_name: Mehta family (synthetic)
 story: >
   Nuclear family in Pune with two young children. Rohan earns; Ananya manages the home and has her own FD.
   Rohan made his 8-year-old son the nominee on his term plan but never named an appointee/guardian.
+# Demo second factor (TOTP, RFC 6238). Synthetic and published on purpose; add it to any authenticator app.
+totp_secret: RGCOIPBHJMRGSNVZUIIEJCML47XZTUGS
 demo_passphrase: mehta-demo-vault
 owner: p_rohan
 primary_earner: p_rohan

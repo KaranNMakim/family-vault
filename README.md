@@ -7,6 +7,8 @@ accounts, demat holdings or property papers exist, who the nominee is, or where 
 unclaimed. **family-vault** records *where* things are (never full numbers), finds the gaps, and generates an
 "if something happens" checklist for the family.
 
+![family-vault demo: 2-step unlock, readiness score, estate map, one-click fix, checklist, nominee view, audit log](docs/media/family-vault-demo.gif)
+
 **In 5 minutes a family member sees:** a readiness score (0–100) with the top fixes, an estate map with the gaps
 circled, one-click fixes that raise the score, a nominee's read-only view, a step-by-step checklist (printable PDF),
 and a simulated emergency-access request that the owner can cancel.
@@ -25,7 +27,8 @@ make eval      # writes docs/eval-report.md
 On Windows without GNU make, the bundled `make.cmd` runs the same targets: `make demo` in cmd.exe or `.\make demo`
 in PowerShell. Everything runs offline after `make install` (`LLM_MODE=mock` is the default).
 
-Open http://localhost:3000, pick a sample family (the demo passphrase is pre-filled) and follow
+Open http://localhost:3000, pick a sample family (the demo passphrase is pre-filled; the 6-digit code comes from the
+on-screen demo authenticator, or add the family's published setup key to any authenticator app) and follow
 [docs/demo-script.md](docs/demo-script.md). API docs: http://localhost:8000/docs.
 
 ## Architecture
@@ -76,7 +79,8 @@ reference checklists), `docs/`, `tests/`. Plan and assumptions: [PLAN.md](PLAN.m
 | Encryption | Argon2id KDF, XChaCha20-Poly1305 field encryption with record/field binding, encrypted export | Key held in server memory while unlocked; no KMS/HSM; one vault passphrase per family |
 | Masking guard | Enforced at the API (and mirrored in the UI): last-4 only; rejects full numbers, Aadhaar/PAN-like, card numbers, passwords/PIN/OTP | Pattern-based, not exhaustive |
 | Gap rules, readiness, checklists | Deterministic engines, evaluated against a manifest and 9 reference checklists | Checklist content is generic guidance, not institution-verified |
-| Roles | Owner, Spouse (full/shared), Nominee, Advisor, Emergency grantee; enforced server-side on every response | **Authentication is simulated**: a role switcher, not per-person logins |
+| Unlock | Two-step: passphrase (Argon2id) + TOTP code (RFC 6238, works with Google/Microsoft Authenticator); TOTP secret encrypted in the vault; 5-try lockout; codes can't be replayed; 15-min idle / 8-h absolute session expiry; failed unlocks audited | The on-screen "demo authenticator" shows codes for the sample families; sessions are in server memory |
+| Roles | Owner, Spouse (full/shared), Nominee, Advisor, Emergency grantee; enforced server-side on every response | **Per-person logins are simulated**: after the owner unlocks with 2FA, a role switcher previews other roles |
 | Emergency access | Full state machine: request → wait → owner notified/cancel → activate → 7-day expiry, all audited | Simulated clock and in-app notifications (no SMS/email); no identity verification or legal review |
 | Audit | Append-only, hash-chained, tamper-evident | Stored in the same vault file |
 | LLM | `LLMClient` with Anthropic SDK (`LLM_MODE=live`, `ANTHROPIC_MODEL`, default `claude-opus-5-5`) | Default is deterministic mock; LLM only rephrases questions/steps from structural templates |

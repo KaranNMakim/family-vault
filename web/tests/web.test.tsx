@@ -6,6 +6,7 @@ import { ChecklistView } from "@/components/ChecklistView";
 import { toElements } from "@/components/EstateMap";
 import { ApiError } from "@/lib/api";
 import { checkFreeText, checkMaskedId } from "@/lib/masking";
+import { base32Decode, totpCode } from "@/lib/totp";
 import { SessionProvider } from "@/lib/session";
 import type { Checklist, Graph } from "@/lib/types";
 
@@ -121,5 +122,36 @@ describe("home page smoke", () => {
       </SessionProvider>,
     );
     await waitFor(() => expect(screen.getByRole("alert").textContent).toMatch(/make demo/));
+  });
+});
+
+describe("TOTP (same algorithm as authenticator apps)", () => {
+  // RFC 6238 Appendix B secret "12345678901234567890" in base32.
+  const RFC = "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ";
+  it("matches the RFC test vectors", async () => {
+    expect(await totpCode(RFC, 59_000)).toBe("287082");
+    expect(await totpCode(RFC, 1_111_111_109_000)).toBe("081804");
+    expect(await totpCode(RFC, 1_234_567_890_000)).toBe("005924");
+  });
+  it("decodes base32 and rejects junk", () => {
+    expect(Array.from(base32Decode("MZXW6"))).toEqual([102, 111, 111]);
+    expect(() => base32Decode("not-base32!")).toThrow();
+  });
+});
+
+describe("start page security", () => {
+  it("explains the protections and asks for a passphrase first", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify([{ id: "family_a", display_name: "Mehta family (synthetic)" }]), { status: 200 })),
+    );
+    render(
+      <SessionProvider>
+        <Home />
+      </SessionProvider>,
+    );
+    await waitFor(() => expect(screen.getByText("Mehta family (synthetic)")).toBeTruthy());
+    expect(screen.getByText("How this vault is protected")).toBeTruthy();
+    expect(screen.getAllByText("Authenticator code").length).toBeGreaterThan(0);
   });
 });
