@@ -23,3 +23,10 @@
 - `app/core/emergency.py`: request → waiting period → owner notified/cancel → activate after delay → 7-day read-only scope → expiry; simulated clock.
 - `app/core/access.py`: Owner / Spouse (full|shared) / Nominee / Advisor / Emergency scoped views and field redaction.
 - `app/core/audit.py`: hash-chained, redacted audit log with tamper verification.
+
+## Phase 4 — API
+- Full FastAPI surface: `/families`, `/session/{unlock,act-as,personas}`, `/vaults`, CRUD for `/people /assets /liabilities /documents /institutions /advisors`, `/relations`, `/graph`, `/gaps`, `/readiness`, `/checklist/{scenario}` (+ `/pdf`), `/access-requests` (create, cancel, approve-after-delay, view), `/notifications`, `/demo/clock`, `/audit`, `/export`, `/import`, `/onboarding`.
+- Global body guard rejects forbidden keys (password, PIN, Aadhaar, account_number, …); masking errors return 422 with a plain-language "why".
+- Every read/change of the vault is audited; role scoping applied to every response.
+- Conversational onboarding engine (`app/core/onboarding.py`) with skippable sections and progress.
+- LLM guard now permits single/double digits (e.g. "last 4 digits") but rejects runs of 3+.

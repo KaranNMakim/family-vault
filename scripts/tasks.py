@@ -23,7 +23,7 @@ def _npm() -> str:
         candidate = Path(os.environ.get("PROGRAMFILES", r"C:\Program Files")) / "nodejs" / "npm.cmd"
         exe = str(candidate) if candidate.exists() else None
     if not exe:
-        sys.exit("npm not found — install Node.js LTS (see README).")
+        sys.exit("npm not found - install Node.js LTS (see README).")
     return exe
 
 
@@ -54,7 +54,7 @@ def t_test() -> None:
     if (WEB / "node_modules").exists():
         run([_npm(), "run", "test", "--silent"], cwd=WEB)
     else:
-        print("web/node_modules missing — skipping web tests (run `make install`).")
+        print("web/node_modules missing - skipping web tests (run `make install`).")
 
 
 def t_seed() -> None:

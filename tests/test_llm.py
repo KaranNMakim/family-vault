@@ -48,3 +48,51 @@ def test_provenance_helpers():
     assert human("api").method == "human"
     p = rule("gap-engine", 0.9)
     assert p.method == "rule" and p.confidence == 0.9
+
+
+class _Block:
+    def __init__(self, text):
+        self.type, self.text = "text", text
+
+
+class _Resp:
+    def __init__(self, text, stop="end_turn"):
+        self.content, self.stop_reason = [_Block(text)], stop
+
+
+class _FakeClient:
+    def __init__(self, reply):
+        self.reply, self.calls = reply, []
+        self.beta = self
+        self.messages = self
+
+    def create(self, **kw):
+        self.calls.append(kw)
+        if isinstance(self.reply, Exception):
+            raise self.reply
+        return self.reply
+
+
+@pytest.mark.parametrize(
+    "reply,expected",
+    [
+        (_Resp("Please call {institution} soon."), "Please call {institution} soon."),
+        (_Resp("Please call them soon."), "Call {institution}."),  # dropped placeholder -> template
+        (_Resp("x", stop="refusal"), "Call {institution}."),
+        (RuntimeError("offline"), "Call {institution}."),
+    ],
+)
+def test_live_client_falls_back_safely(monkeypatch, reply, expected):
+    import anthropic
+
+    from app.kg.llm import AnthropicLLM
+
+    fake = _FakeClient(reply)
+    monkeypatch.setattr(anthropic, "Anthropic", lambda **kw: fake)
+    llm = AnthropicLLM("claude-opus-5-5")
+    c = ctx(template="Call {institution}.", action="claim")
+    assert llm.rephrase(c) == expected
+    if not isinstance(reply, Exception):
+        sent = fake.calls[0]
+        assert sent["model"] == "claude-opus-5-5" and "Rohan" not in str(sent["messages"])
+    assert llm.rephrase(c) == expected  # cached or deterministic fallback

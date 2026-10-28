@@ -26,7 +26,8 @@ ALLOWED_KEYS = {
     "actor_role", "blocked", "step_index", "people_count", "assets_count", "template",
 }
 _PLACEHOLDER = re.compile(r"\{[a-z_]+\}")
-_SAFE_STR = re.compile(r"^[A-Za-z ,.;:'’()/?!\-_{}&]*$")
+_SAFE_STR = re.compile(r"^[A-Za-z0-9 ,.;:'’()/?!\-_{}&]*$")
+_DIGIT_RUN = re.compile(r"\d{3,}")
 
 
 class LLMGuardError(ValueError):
@@ -51,7 +52,7 @@ class StructuralContext(BaseModel):
                     if not 0 <= item <= 999:
                         raise LLMGuardError(f"{key}: numbers sent to the LLM must be small counts")
                     continue
-                if len(item) > 400 or not _SAFE_STR.match(item):
+                if len(item) > 400 or not _SAFE_STR.match(item) or _DIGIT_RUN.search(item):
                     raise LLMGuardError(f"{key}: only structural text (no digits or data) may be sent")
         return v
 
