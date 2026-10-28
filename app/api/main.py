@@ -137,7 +137,9 @@ def create_app(registry: Registry | None = None) -> FastAPI:
     api = FastAPI(title="family-vault (DEMO - synthetic data only)", version=__version__,
                   dependencies=[Depends(guard_body)])
     api.state.registry = reg
-    api.add_middleware(CORSMiddleware, allow_origins=list(settings.cors_origins), allow_methods=["*"],
+    # Local demo: any localhost port may call the API (dev proxies often move the web port).
+    api.add_middleware(CORSMiddleware, allow_origins=list(settings.cors_origins),
+                       allow_origin_regex=r"http://(localhost|127\.0\.0\.1)(:\d+)?", allow_methods=["*"],
                        allow_headers=["*"], expose_headers=["Content-Disposition"])
 
     # ------------------------------------------------------------------ errors

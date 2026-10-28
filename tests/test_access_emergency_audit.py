@@ -111,6 +111,14 @@ def test_invalid_requests(fresh, est_factory, pid, hours, msg):
     s.close()
 
 
+def test_minor_cannot_request(fresh, est_factory):
+    s = fresh("family_a")
+    with pytest.raises(emergency.EmergencyError, match="minor"):
+        emergency.create_request(est_factory(s), "p_kabir", "x", 24, at=T0)
+    s.close()
+
+
+
 def test_simulated_clock(fresh):
     s = fresh("family_a")
     before = emergency.now(s)

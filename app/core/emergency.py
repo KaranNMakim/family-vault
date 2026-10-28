@@ -107,6 +107,8 @@ def create_request(est: Estate, requester_id: str, reason: str, wait_hours: int,
     person = est.node(requester_id)
     if person.cls != "Person" or not person.props.get("is_alive", True):
         raise EmergencyError("only a living person in the vault can request emergency access")
+    if est.is_minor(requester_id):
+        raise EmergencyError("a minor cannot request emergency access; their guardian should ask instead")
     if not est.nominated_assets(requester_id):
         raise EmergencyError("emergency access is for nominees; this person is not a nominee on any asset")
     if any(r.requester_id == requester_id and r.status in ("pending", "active") for r in list_requests(store, at)):

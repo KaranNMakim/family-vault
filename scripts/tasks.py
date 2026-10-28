@@ -69,6 +69,10 @@ def t_web_test() -> None:
     run([_npm(), "run", "test", "--silent"], cwd=WEB)
 
 
+def t_web_start() -> None:
+    run([_npm(), "run", "start"], cwd=WEB)
+
+
 def t_demo() -> None:
     t_seed()
     npm = _npm()
@@ -101,6 +105,7 @@ TARGETS = {
     "eval": t_eval,
     "demo": t_demo,
     "web-test": t_web_test,
+    "web-start": t_web_start,
 }
 
 if __name__ == "__main__":

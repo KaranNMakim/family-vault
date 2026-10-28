@@ -30,3 +30,10 @@
 - Every read/change of the vault is audited; role scoping applied to every response.
 - Conversational onboarding engine (`app/core/onboarding.py`) with skippable sections and progress.
 - LLM guard now permits single/double digits (e.g. "last 4 digits") but rejects runs of 3+.
+
+## Phase 5 — web app
+- Next.js 15 (App Router) + TypeScript + Tailwind v4 + Cytoscape.js in `web/`.
+- Pages: start/unlock, overview (readiness ring + "fix these first"), onboarding (guided conversation + form fallback, progress, skippable), estate map (gap rings, legend, details panel with provenance), gaps (one-click fixes), checklist (3 scenarios, print + PDF), nominee view, emergency-access simulation (timeline, cancel, demo clock), vault & audit (encrypted export/import, hash-chain status).
+- Role switcher (owner / spouse / nominee / advisor / emergency), always-visible demo banner, 18px base type, mobile nav.
+- Client-side mirror of the masking guard; vitest smoke + unit tests (22).
+- Minors can no longer file emergency-access requests (guardian should). CORS allows any localhost port for the local demo.

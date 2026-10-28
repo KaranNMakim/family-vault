@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+/* Calm, paper-like palette with high contrast for older readers. */
+@theme {
+  --color-paper: #faf8f4;
+  --color-card: #ffffff;
+  --color-ink: #1c2530;
+  --color-muted: #4b5563;
+  --color-line: #e5e1d8;
+  --color-brand: #0f6b63;
+  --color-brand-dark: #0b4f49;
+  --color-brand-soft: #e3f1ef;
+  --color-warn-soft: #fff4d6;
+  --color-sev-critical: #b42318;
+  --color-sev-high: #c4320a;
+  --color-sev-medium: #946200;
+  --color-sev-low: #475467;
+  --color-sev-info: #475467;
+  --font-sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial, sans-serif;
+}
+
+html {
+  font-size: 18px;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  line-height: 1.55;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+@utility btn {
+  @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2 font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+}
+@utility btn-primary {
+  @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2 font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 bg-brand text-white hover:bg-brand-dark;
+}
+@utility btn-secondary {
+  @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2 font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 border border-line bg-card text-ink hover:bg-brand-soft;
+}
+@utility btn-danger {
+  @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2 font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 border border-sev-critical bg-card text-sev-critical hover:bg-red-50;
+}
+@utility card {
+  @apply rounded-2xl border border-line bg-card p-5 shadow-sm;
+}
+@utility field {
+  @apply min-h-11 w-full rounded-xl border border-line bg-card px-3 py-2 text-ink;
+}
+@utility label {
+  @apply mb-1 block font-semibold;
+}
+@utility chip {
+  @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-sm font-semibold;
+}
+
+@media print {
+  header,
+  nav,
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white;
+    font-size: 12pt;
+  }
+  .card {
+    box-shadow: none;
+    border-color: #999;
+    break-inside: avoid;
+  }
+}
