@@ -17,7 +17,7 @@ class Settings:
     data_dir: Path = field(default_factory=lambda: Path(os.getenv("VAULT_DATA_DIR", ROOT / "data")))
     as_of: date = field(default_factory=lambda: date.fromisoformat(os.getenv("VAULT_AS_OF", DEFAULT_AS_OF)))
     llm_mode: str = field(default_factory=lambda: os.getenv("LLM_MODE", "mock"))
-    llm_model: str = field(default_factory=lambda: os.getenv("ANTHROPIC_MODEL", "claude-sonnet-5-5"))
+    llm_model: str = field(default_factory=lambda: os.getenv("ANTHROPIC_MODEL", "claude-opus-5-5"))
     # Days of look-ahead for "maturing / expiring soon" checks.
     expiry_window_days: int = field(default_factory=lambda: int(os.getenv("VAULT_EXPIRY_WINDOW_DAYS", "60")))
     # Emergency-access default waiting period (hours, simulated clock).

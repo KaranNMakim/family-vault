@@ -28,3 +28,10 @@ def test_json_formatter_redacts_extra():
     line = json.loads(JsonFormatter().format(rec))
     assert line["msg"] == "hello x"
     assert line["notes"] == "[REDACTED]"
+
+
+def test_ontology_endpoint_formats():
+    client = TestClient(create_app())
+    assert "Person" in client.get("/ontology").json()["classes"]
+    assert "owl:Class" in client.get("/ontology?format=turtle").text
+    assert client.get("/ontology?format=jsonld").headers["content-type"].startswith("application/ld+json")

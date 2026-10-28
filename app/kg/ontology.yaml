@@ -1,0 +1,108 @@
+# family-vault ontology. Loaded and validated by app/kg/ontology.py; exportable to Turtle / JSON-LD.
+# Property types: string | text (free text, PII-guarded) | enum | date | bool | number | masked_id
+# sensitive: true  -> encrypted at rest (field-level), hidden from Advisor views, never sent to the LLM.
+namespace: "https://family-vault.example/ontology#"
+prefix: fv
+version: "0.1.0"
+
+enums:
+  relation: [self, spouse, son, daughter, father, mother, brother, sister, grandson, granddaughter,
+             grandfather, grandmother, daughter_in_law, son_in_law, father_in_law, mother_in_law,
+             nephew, niece, friend, other]
+  asset_type: [insurance, fixed_deposit, bank_account, demat, mutual_fund, property, vehicle, other]
+  liability_type: [loan, credit_card]
+  liability_subtype: [home_loan, vehicle_loan, personal_loan, education_loan, gold_loan, credit_card, other]
+  value_band: [under_1l, 1l_10l, 10l_50l, 50l_1cr, above_1cr, unknown]
+  doc_type: [policy_document, fd_receipt, passbook, bank_statement, demat_holding_statement, cas_statement,
+             title_deed, property_tax_receipt, rc_book, will, loan_agreement, loan_cover_note,
+             nomination_form, other]
+  institution_kind: [insurer, bank, depository_participant, amc, registrar, rto, sub_registrar,
+                     post_office, nbfc, other]
+  advisor_kind: [insurance_agent, mf_distributor, chartered_accountant, lawyer, bank_rm, other]
+  ownership_role: [owner, joint, co_borrower]
+
+classes:
+  Person:
+    description: A family member or other person relevant to the estate.
+    properties:
+      name: {type: string, required: true}
+      relation: {type: enum, enum: relation, description: Relation to the vault owner}
+      dob: {type: date, sensitive: true, description: Used only to infer whether someone is a minor}
+      is_alive: {type: bool, default: true}
+      reachable: {type: bool, default: true, description: Can the family currently contact this person}
+      household: {type: bool, default: true, description: Part of the family circle that should know about assets}
+      is_earner: {type: bool, default: false}
+  Nominee:
+    subclass_of: Person
+    inferred: true
+    description: A Person who is nominee_of at least one Asset (inferred by rule, never asserted).
+  Asset:
+    description: Something of value held by a family member.
+    properties:
+      asset_type: {type: enum, enum: asset_type, required: true}
+      label: {type: string, required: true, description: Friendly name, e.g. "Term plan" (no numbers)}
+      masked_id: {type: masked_id, sensitive: true, description: Last 4 characters only}
+      maturity_date: {type: date}
+      expiry_date: {type: date}
+      value_band: {type: enum, enum: value_band, default: unknown}
+      notes: {type: text, sensitive: true}
+  Liability:
+    description: A loan or credit card.
+    properties:
+      liability_type: {type: enum, enum: liability_type, required: true}
+      subtype: {type: enum, enum: liability_subtype}
+      label: {type: string, required: true}
+      masked_id: {type: masked_id, sensitive: true}
+      end_date: {type: date}
+      outstanding_band: {type: enum, enum: value_band, default: unknown}
+      notes: {type: text, sensitive: true}
+  Document:
+    description: A supporting paper or file and where to find it.
+    properties:
+      doc_type: {type: enum, enum: doc_type, required: true}
+      label: {type: string, required: true}
+      location: {type: text, sensitive: true, description: "Where it is kept, e.g. 'Godrej almirah, top shelf'"}
+      digital_copy: {type: bool, default: false}
+  Institution:
+    description: Bank, insurer, depository, AMC, registrar or office holding the record.
+    properties:
+      name: {type: string, required: true}
+      kind: {type: enum, enum: institution_kind, required: true}
+      city: {type: string}
+  Advisor:
+    description: An external professional (agent, CA, distributor, lawyer).
+    properties:
+      name: {type: string, required: true}
+      kind: {type: enum, enum: advisor_kind, required: true}
+      firm: {type: string}
+
+relations:
+  owns:
+    domain: [Person]
+    range: [Asset, Liability]
+    description: Ownership or borrowing. role=joint for joint holders, co_borrower for loans.
+    properties:
+      role: {type: enum, enum: ownership_role, default: owner}
+  nominee_of:
+    domain: [Person]
+    range: [Asset]
+    description: Person registered as nominee with the institution.
+    properties:
+      share_pct: {type: number}
+  held_at:
+    domain: [Asset, Liability]
+    range: [Institution]
+  documented_by:
+    domain: [Asset, Liability]
+    range: [Document]
+  guardian_of:
+    domain: [Person]
+    range: [Person]
+    description: Guardian / appointee for a minor.
+  advised_by:
+    domain: [Asset, Liability]
+    range: [Advisor]
+  knows_about:
+    domain: [Person]
+    range: [Asset, Liability]
+    description: This person knows the asset exists (owners know implicitly).
