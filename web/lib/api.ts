@@ -51,6 +51,9 @@ export async function api<T = unknown>(path: string, opts: Opts = {}): Promise<T
     } catch {
       /* not JSON */
     }
+    if (res.status === 401 && opts.token && typeof window !== "undefined") {
+      window.dispatchEvent(new Event("fv:unauthorized")); // session expired (e.g. API restarted)
+    }
     throw new ApiError(res.status, body);
   }
   if (opts.raw) return (await res.blob()) as T;

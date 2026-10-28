@@ -86,6 +86,12 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     }
   }, [ownerSession]);
 
+  useEffect(() => {
+    const onUnauthorized = () => setSession(null);
+    window.addEventListener("fv:unauthorized", onUnauthorized);
+    return () => window.removeEventListener("fv:unauthorized", onUnauthorized);
+  }, [setSession]);
+
   const lock = useCallback(async () => {
     for (const s of [session, ownerSession]) {
       if (s) await api("/session", { method: "DELETE", token: s.token }).catch(() => undefined);

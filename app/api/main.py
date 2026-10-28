@@ -533,6 +533,8 @@ def create_app(registry: Registry | None = None) -> FastAPI:
             raise
         except (KeyError, ValueError) as e:
             raise HTTPException(422, f"could not save that answer: {e}") from e
+        if c.pr.role == "owner" and not c.pr.person_id:  # owner person was just created
+            c.session.principal.person_id = c.store.meta.get("owner")
         c.audit("onboarding.answer", res.question.section, {"created": res.last_created})
         return res.model_dump()
 

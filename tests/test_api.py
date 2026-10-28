@@ -234,11 +234,13 @@ def test_onboarding_flow_creates_graph_and_gaps(client):
     assert client.post("/onboarding/answer", json={"skip": True}, headers=h).status_code == 422
     q = client.post("/onboarding/answer", json={"name": "Meera Iyer", "dob": "1985-02-02"}, headers=h).json()
     owner = q["last_created"][0]
+    assert client.get("/session", headers=h).json()["principal"]["person_id"] == owner
     q = client.post("/onboarding/answer", json={"name": "Tara Iyer", "relation": "daughter", "dob": "2019-01-01"},
                     headers=h).json()
     tara = q["last_created"][0]
     q = client.post("/onboarding/answer", json={"done": True}, headers=h).json()
     assert q["question"]["id"] == "insurance.has" and q["progress"]["done"] == 1
+    assert "have an insurance policy" in q["question"]["prompt"]
     q = client.post("/onboarding/answer", json={"yes": True}, headers=h).json()
     assert q["question"]["input"] == "asset_form"
     bad = client.post("/onboarding/answer", json={"label": "Term plan", "masked_id": "123456789012"}, headers=h)

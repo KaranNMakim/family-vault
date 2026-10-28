@@ -37,3 +37,8 @@
 - Role switcher (owner / spouse / nominee / advisor / emergency), always-visible demo banner, 18px base type, mobile nav.
 - Client-side mirror of the masking guard; vitest smoke + unit tests (22).
 - Minors can no longer file emergency-access requests (guardian should). CORS allows any localhost port for the local demo.
+
+## Phase 6 — eval, docs, polish
+- `make eval` (`app/eval.py`) → `docs/eval-report.md`: gap P/R 100%/100% (23 planted, 5 negative controls clean), 9/9 checklists exact vs references, crypto 7/7, masking 22/22 full-number inputs rejected (8/8 valid accepted), 0 family values in LLM payloads.
+- `docs/security.md` (threat model, key loss), `docs/demo-script.md` (3 flows), full README (mermaid architecture, mocked vs real, productization).
+- Fixes found during browser testing: SQLite connection now thread-safe across API workers; onboarding chat no longer crashes in browsers where `scrollIntoView` returns a Promise; expired sessions return the user to the start page; "an insurance policy" wording; owner session gets its person id once the owner is created in onboarding.

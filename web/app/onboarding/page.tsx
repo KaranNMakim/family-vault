@@ -59,7 +59,10 @@ function Conversation() {
       .catch((e: Error) => setError(e.message));
   }, [token]);
 
-  useEffect(() => end.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }), [msgs]);
+  useEffect(() => {
+    // Block body on purpose: some browsers return a Promise from scrollIntoView, which React would treat as cleanup.
+    void end.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [msgs]);
 
   const send = async (answer: Record<string, unknown>) => {
     setBusy(true);

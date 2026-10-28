@@ -33,7 +33,7 @@ SECTION_TITLES = {"household": "Your family", "insurance": "Insurance", "bank_ac
 TEMPLATES = {
     "owner": "Let's start with you. What is your name, and your date of birth?",
     "member": "Who else is in your family? Add one person at a time, or say you're done.",
-    "has": "Do you or anyone in the family have a {type}?",
+    "has": "Do you or anyone in the family have {a_type}?",
     "item": "Tell me about the {type}. Only the last 4 digits of any number, please.",
     "another": "Got it. Is there another {type} to add?",
     "has_liabilities": "Does anyone in the family have a loan?",
@@ -100,7 +100,9 @@ def _question(est: Estate, st: OnboardingState) -> Question:
     is_li = section == "liabilities"
     stage = "has" if st.stage == "start" else st.stage
     key = f"{stage}_liabilities" if is_li else stage
-    tmpl = TEMPLATES[key].replace("{type}", TYPE_LABELS.get(section, "loan"))
+    label = TYPE_LABELS.get(section, "loan")
+    article = "an" if label[0] in "aeiou" else "a"
+    tmpl = TEMPLATES[key].replace("{a_type}", f"{article} {label}").replace("{type}", label)
     kind = {"has": "yesno", "another": "yesno"}.get(stage, "liability_form" if is_li else "asset_form")
     ctx: dict[str, Any] = {"people": people}
     if kind.endswith("form"):

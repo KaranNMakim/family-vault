@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import threading
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -34,6 +35,40 @@ CREATE TABLE IF NOT EXISTS audit (seq INTEGER PRIMARY KEY, body TEXT NOT NULL, p
 
 class NotFound(KeyError):
     pass
+
+
+class LockedConnection:
+    """sqlite3 connection safe to share across API worker threads (one statement at a time)."""
+
+    def __init__(self, path: Path):
+        self._conn = sqlite3.connect(path, check_same_thread=False)
+        self._lock = threading.RLock()
+
+    def execute(self, sql: str, params: tuple = ()) -> list:
+        with self._lock:
+            return LockedCursor(self._conn.execute(sql, params).fetchall())
+
+    def executescript(self, sql: str) -> None:
+        with self._lock:
+            self._conn.executescript(sql)
+
+    def commit(self) -> None:
+        with self._lock:
+            self._conn.commit()
+
+    def close(self) -> None:
+        with self._lock:
+            self._conn.close()
+
+
+class LockedCursor(list):
+    """Rows already fetched under the lock; mimics the cursor methods we use."""
+
+    def fetchall(self) -> list:
+        return list(self)
+
+    def fetchone(self):
+        return self[0] if self else None
 
 
 @dataclass
@@ -85,7 +120,7 @@ class NetworkXSQLiteStore:
         self.path = Path(path)
         self.cipher = cipher
         self.onto = onto or get_ontology()
-        self.db = sqlite3.connect(self.path, check_same_thread=False)
+        self.db = LockedConnection(self.path)
         self.db.executescript(SCHEMA)
         self.g = nx.MultiDiGraph()
         self._load()
