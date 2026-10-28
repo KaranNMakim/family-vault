@@ -16,3 +16,10 @@
 - 8 deterministic gap rules G01–G08 (`app/core/gaps.py`) with severity, plain-language fix and one-click `fix_action`.
 - Readiness score 0–100 with capped category breakdown and per-gap "points if fixed".
 - Three synthetic families (`data/seed/`) + planted-gap manifest (`data/eval/gap_manifest.yaml`, 23 gaps + 5 negative controls); `python -m app.seed`.
+
+## Phase 3 — checklist + emergency access
+- `app/core/checklist.py`: scenarios death_of_earner / incapacity / loss_of_documents → ordered steps per institution with documents, actors (nominee → guardian of minor → joint holder → next of kin) and gap-driven blocking; general-guidance disclaimer; LLM rephrasing via structural templates only.
+- 9 hand-written reference checklists (`data/eval/reference_checklists.yaml`).
+- `app/core/emergency.py`: request → waiting period → owner notified/cancel → activate after delay → 7-day read-only scope → expiry; simulated clock.
+- `app/core/access.py`: Owner / Spouse (full|shared) / Nominee / Advisor / Emergency scoped views and field redaction.
+- `app/core/audit.py`: hash-chained, redacted audit log with tamper verification.

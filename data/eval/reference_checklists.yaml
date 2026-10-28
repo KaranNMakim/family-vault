@@ -1,0 +1,102 @@
+# Hand-written reference checklists (ground truth for `make eval`).
+# Each step: [item_id, action, expected actor ids (set), blocked?]. Steps are listed in the expected order.
+# "universal" lists the scenario-wide steps that must come first, in order, with their actors.
+# Reasoning notes are inline. as_of 2026-11-01. Subject = the family's primary earner.
+
+family_a:   # subject Rohan; next of kin = Ananya (children are minors)
+  death_of_earner:
+    universal: [[obtain_death_certificate, [p_ananya]], [locate_will_and_papers, [p_ananya]]]
+    steps:
+      - [a_term, claim_death_benefit, [p_ananya], true]        # nominee Kabir is 8 and has no guardian -> blocked, kin acts
+      - [a_savings, transmit_bank_account, [p_ananya], false]
+      - [a_demat, transmit_demat, [p_ananya], true]            # only Rohan knew it existed
+      - [a_mf, transmit_mutual_fund, [p_ananya], true]         # no CAS statement recorded
+      - [a_flat, transfer_property, [p_ananya], false]         # joint owner acts
+      - [a_car, transfer_vehicle, [p_ananya], false]
+      - [l_homeloan, inform_lender, [p_ananya], false]         # G08 is informational, not blocking
+  incapacity:
+    universal: [[medical_certificate, [p_ananya]], [check_power_of_attorney, [p_ananya]]]
+    steps:
+      - [a_term, check_disability_benefits, [p_ananya], false]  # nominee issues don't matter while alive
+      - [a_savings, arrange_account_operation, [p_ananya], false]
+      - [a_demat, review_investments, [p_ananya], true]
+      - [a_mf, review_investments, [p_ananya], true]
+      - [a_flat, protect_property, [p_ananya], false]
+      - [a_car, maintain_vehicle, [p_ananya], false]
+      - [l_homeloan, inform_lender, [p_ananya], false]
+  loss_of_documents:
+    universal: [[report_loss, [p_rohan]], [check_digital_copies, [p_rohan]]]
+    steps:
+      - [a_term, request_duplicate, [p_rohan], false]
+      - [a_savings, request_duplicate, [p_rohan], false]
+      - [a_fd_ananya, request_duplicate, [p_ananya], false]     # Ananya's own FD
+      - [a_demat, request_duplicate, [p_rohan], false]
+      - [a_mf, request_duplicate, [p_rohan], true]              # no record of the statement at all
+      - [a_flat, request_duplicate, [p_rohan, p_ananya], false]
+      - [a_car, request_duplicate, [p_rohan], false]
+      - [l_homeloan, request_duplicate, [p_rohan], false]
+
+family_b:   # subject Suresh; next of kin = his sons (Kamla has died)
+  death_of_earner:
+    universal: [[obtain_death_certificate, [p_vikram, p_ajay]], [locate_will_and_papers, [p_vikram, p_ajay]]]
+    steps:
+      - [b_lic, claim_death_benefit, [p_vikram, p_ajay], true]      # nominee Kamla has died
+      - [b_pension, transmit_bank_account, [p_vikram], false]
+      - [b_fd2, claim_fixed_deposit, [p_ajay], false]               # Navi Kendra sorts before Sahyadri
+      - [b_fd1, claim_fixed_deposit, [p_vikram], false]
+      - [b_fd3, claim_fixed_deposit, [p_vikram, p_ajay], true]      # nominee Kamla has died
+      - [b_house, transfer_property, [p_vikram, p_ajay], false]     # surviving joint owners
+  incapacity:
+    universal: [[medical_certificate, [p_vikram, p_ajay]], [check_power_of_attorney, [p_vikram, p_ajay]]]
+    steps:
+      - [b_lic, check_disability_benefits, [p_vikram, p_ajay], false]
+      - [b_pension, arrange_account_operation, [p_vikram, p_ajay], false]
+      - [b_fd2, arrange_account_operation, [p_vikram, p_ajay], false]
+      - [b_fd1, arrange_account_operation, [p_vikram, p_ajay], false]
+      - [b_fd3, arrange_account_operation, [p_vikram, p_ajay], false]
+      - [b_house, protect_property, [p_vikram, p_ajay], false]
+  loss_of_documents:   # whole household's papers; PPF and credit card have no papers recorded -> no step
+    universal: [[report_loss, [p_suresh]], [check_digital_copies, [p_suresh]]]
+    steps:
+      - [b_a_term, request_duplicate, [p_ajay], false]
+      - [b_lic, request_duplicate, [p_suresh], false]
+      - [b_v_savings, request_duplicate, [p_vikram], false]
+      - [b_a_savings, request_duplicate, [p_ajay], false]
+      - [b_pension, request_duplicate, [p_suresh], false]
+      - [b_fd2, request_duplicate, [p_suresh], false]
+      - [b_fd1, request_duplicate, [p_suresh], false]
+      - [b_fd3, request_duplicate, [p_suresh], false]
+      - [b_v_demat, request_duplicate, [p_vikram], false]
+      - [b_v_mf, request_duplicate, [p_vikram], false]
+      - [b_house, request_duplicate, [p_suresh, p_vikram, p_ajay], false]
+      - [l_carloan, request_duplicate, [p_ajay, p_pooja], false]
+
+family_c:   # subject Arjun; next of kin = mother then father
+  death_of_earner:
+    universal: [[obtain_death_certificate, [p_lakshmi, p_gopal]], [locate_will_and_papers, [p_lakshmi, p_gopal]]]
+    steps:
+      - [c_policy, claim_death_benefit, [p_lakshmi], true]          # policy document never collected
+      - [c_savings, transmit_bank_account, [p_lakshmi], false]
+      - [c_old_acct, transmit_bank_account, [p_lakshmi, p_gopal], true]  # nominee unreachable, no papers, unknown
+      - [c_fd, claim_fixed_deposit, [p_lakshmi], true]              # only Arjun knew
+      - [c_demat, transmit_demat, [p_lakshmi], true]
+      - [c_mf, transmit_mutual_fund, [p_lakshmi], true]
+  incapacity:
+    universal: [[medical_certificate, [p_lakshmi, p_gopal]], [check_power_of_attorney, [p_lakshmi, p_gopal]]]
+    steps:
+      - [c_policy, check_disability_benefits, [p_lakshmi, p_gopal], true]
+      - [c_savings, arrange_account_operation, [p_lakshmi, p_gopal], false]
+      - [c_old_acct, arrange_account_operation, [p_lakshmi, p_gopal], true]
+      - [c_fd, arrange_account_operation, [p_lakshmi, p_gopal], true]
+      - [c_demat, review_investments, [p_lakshmi, p_gopal], true]
+      - [c_mf, review_investments, [p_lakshmi, p_gopal], true]
+  loss_of_documents:
+    universal: [[report_loss, [p_arjun]], [check_digital_copies, [p_arjun]]]
+    steps:
+      - [c_policy, request_duplicate, [p_arjun], true]
+      - [c_savings, request_duplicate, [p_arjun], false]
+      - [c_old_acct, request_duplicate, [p_arjun], true]
+      - [c_fd, request_duplicate, [p_arjun], false]
+      - [c_demat, request_duplicate, [p_arjun], true]
+      - [c_mf, request_duplicate, [p_arjun], true]
+      - [c_parents_house, request_duplicate, [p_gopal], true]
